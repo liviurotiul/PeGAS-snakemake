@@ -1,3 +1,4 @@
+
 # PeGAS: A Comprehensive Bioinformatic Solution for Pathogenic Bacterial Genomic Analysis
 
 This is PeGAS, a powerful bioinformatic tool designed for the seamless quality control, assembly, and annotation of Illumina paired-end reads specific to pathogenic bacteria. This tool integrates state-of-the-art open-source software to provide a streamlined and efficient workflow, ensuring accurate insights into the genomic makeup of pathogenic microbial strains.
@@ -35,13 +36,13 @@ Before using PeGAS, ensure you have the following prerequisites installed:
 - **Environment:** Create the conda environemnt you will use for the execution and activate it:
 	```bash
 	(base)user@user:~/Desired/location$ conda env create -f environment.yaml
+	(base)user@user:~/Desired/location$ conda env create -f prokka_env.yaml
 	...
 	(base)user@user:~/Desired/location$ conda activate PeGAS-snakemake
 	```
-### 3.  Using PeGAS:
+### 2.  Using PeGAS:
 - Copy all your fastq.gz files into one folder
 - Run this command in the terminal:
-```bash
-(base)user@user:~/Desired/location$ snakemake --cores 32 --rerun-incomplete --use-conda --config raw_data=Path/To/Your/Data
-```
-
+	```bash
+	(base)user@user:~/Desired/location$ snakemake --cores 32 --rerun-incomplete --use-conda --config raw_data=Path/To/Your/Data
+	```
