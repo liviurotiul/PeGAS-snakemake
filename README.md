@@ -32,7 +32,7 @@ Before using PeGAS, ensure you have the following prerequisites installed:
 	```bash
 	(base)user@user:~/Desired/location$ git clone https://github.com/liviurotiul/PeGAS-snakemake.git
 	```
-	-**Environment:** Create the conda environemnt you will use for the execution and activate it:
+- **Environment:** Create the conda environemnt you will use for the execution and activate it:
 	```bash
 	(base)user@user:~/Desired/location$ conda env create -f environment.yaml
 	...

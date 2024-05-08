@@ -50,21 +50,22 @@ species_color_mapping = assign_colors(species_dict)
 # [GENE, SAMPLE, ID, COVERAGE]
 
 # First, select only the plasmids rows
-df_resistance = df[df["PREDICTION_SOURCE"] == "VFDB"]
+df_virulence = df[df["PREDICTION_SOURCE"] == "VFDB"]
 
 # Only use the gene, sample, identity and coverage columns
-df_resistance_id = df_resistance[["GENE", "SAMPLE", "%IDENTITY"]]
+df_virulence_id = df_virulence[["GENE", "SAMPLE", "%IDENTITY"]]
 
 # Add the index as a separate column
-df_resistance["ID"] = df_resistance_id.index
+df_virulence["ID"] = df_virulence_id.index
 
 # Make a dictionary mapping each id to the gene
-id_to_gene = dict(zip(df_resistance_id.index, df_resistance_id["GENE"]))
+id_to_gene = dict(zip(df_virulence_id.index, df_virulence_id["GENE"]))
 
 # Pivot the dataframe on the ID
-df_virulence_id = df_resistance.pivot(index='SAMPLE', columns='ID', values='%IDENTITY')
-df_virulence_cov = df_resistance.pivot(index='SAMPLE', columns='ID', values='%COVERAGE')
+df_virulence_id = df_virulence.pivot_table(index='SAMPLE', columns='ID', values='%IDENTITY', aggfunc='max')
+df_virulence_cov = df_virulence.pivot_table(index='SAMPLE', columns='ID', values='%COVERAGE', aggfunc='max')
 
+# Delete rows tha only hae NaN values
 df_virulence_id = df_virulence_id.fillna(0)
 df_virulence_cov = df_virulence_cov.fillna(0)
 
@@ -126,8 +127,8 @@ df_resistance["ID"] = df_resistance_id.index
 id_to_gene = dict(zip(df_resistance_id.index, df_resistance_id["GENE"]))
 
 # Pivot the dataframe on the ID
-df_plasmids_id = df_resistance.pivot(index='SAMPLE', columns='ID', values='%IDENTITY')
-df_plasmids_cov = df_resistance.pivot(index='SAMPLE', columns='ID', values='%COVERAGE')
+df_plasmids_id = df_resistance.pivot_table(index='SAMPLE', columns='ID', values='%IDENTITY', aggfunc='max')
+df_plasmids_cov = df_resistance.pivot_table(index='SAMPLE', columns='ID', values='%COVERAGE', aggfunc='max')
 
 df_plasmids_id = df_plasmids_id.fillna(0)
 df_plasmids_cov = df_plasmids_cov.fillna(0)
@@ -190,8 +191,8 @@ df_resistance["ID"] = df_resistance_id.index
 id_to_gene = dict(zip(df_resistance_id.index, df_resistance_id["GENE"]))
 
 # Pivot the dataframe on the ID
-df_resistance_id = df_resistance.pivot(index='SAMPLE', columns='ID', values='%IDENTITY')
-df_resistance_cov = df_resistance.pivot(index='SAMPLE', columns='ID', values='%COVERAGE')
+df_resistance_id = df_resistance.pivot_table(index='SAMPLE', columns='ID', values='%IDENTITY', aggfunc='max')
+df_resistance_cov = df_resistance.pivot_table(index='SAMPLE', columns='ID', values='%COVERAGE', aggfunc='max')
 
 df_resistance_id = df_resistance_id.fillna(0)
 df_resistance_cov = df_resistance_cov.fillna(0)
@@ -744,24 +745,24 @@ template = Template(html_string)
 
 # Define the visualizations dictionary with descriptive titles as keys and visualization codes as values
 visualizations = {
-    "Sunburst Figure": sunburst_figure_code,
-    "Heatmap Virulence Full Figure Coverage": heatmap_virulence_full_figure_coverage_code,
-    "Heatmap Plasmids Full Figure Coverage": heatmap_plasmids_full_figure_coverage_code,
-    "Heatmap Resistance Full Figure": heatmap_resistance_full_figure_code,
+    "Sunburst Chart": sunburst_figure_code,
+    "Virulence Heatmap": heatmap_virulence_full_figure_coverage_code,
+    "Plasmid Gene Heatmap": heatmap_plasmids_full_figure_coverage_code,
+    "Resistance Heatmap": heatmap_resistance_full_figure_code,
     # "Heatmap Virulence Species Figure": heatmap_virulence_species_figure_code,
     # "Heatmap Plasmids Species Figure": heatmap_plasmids_species_figure_code,
     # "Heatmap Resistance Figure": Heatmap_resistance_fig_code,
-    "Network Samples Figure": Network_samples_figure_code,
-    "Subtype HTML String": subtype_html_string,
-    "Heatmap Pangenomic Code": Heatmap_pangenomic_codes,
-    "Scatter Contig Length Code": Scatter_contig_length_code,
-    "Box Contig Length Code": Box_contig_length_code,
+    "Network Chart": Network_samples_figure_code,
+    "Subtype Pie Charts": subtype_html_string,
+    "Pangenomic Heatmap": Heatmap_pangenomic_codes,
+    "QC Scatter Plot": Scatter_contig_length_code,
+    "QC Box Plot": Box_contig_length_code,
     # "Virulome HTML String": virulome_html_string,
     # "Plasmid HTML String": plasmid_html_string,
     # "Resistome HTML String": resistome_html_string,
-    "DF Full Table Code": df_full_table_code,
-    "DF Reads Table Code": df_reads_table_code,
-    "Pangenome Pie Chart Code": pangenome_pie_chart_codes
+    "Gene Table": df_full_table_code,
+    "QC Table": df_reads_table_code,
+    "Pangenome Pie Chart": pangenome_pie_chart_codes
 }
 
 # Iterate over the items in the visualizations dictionary
@@ -780,7 +781,7 @@ for title, visualization in visualizations.items():
     )
 
     # Open a file with the derived file name and write the rendered template to it
-    with open(f"report/vis_{title.replace(' ', '_').replace('_Code', '')}.html", 'w') as file:
+    with open(f"report/{title.replace(' ', '_').replace('_Code', '')}.html", 'w') as file:
         file.write(rendered_template)
 
 os.system("touch flags/.report")

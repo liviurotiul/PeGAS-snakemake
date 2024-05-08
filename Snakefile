@@ -5,6 +5,7 @@ from scripts.utils import species_dict
 from scripts.utils import forbidden_files
 
 raw_data_path = config["raw_data"]
+# list_of_samples = config["sample_list"]
 try:
     list_of_samples = config["sample_list"]
 except KeyError:
@@ -13,19 +14,22 @@ except KeyError:
 if not list_of_samples:
 
     list_of_samples = os.listdir(raw_data_path)
-    list_of_samples = [f.replace("_L001_R1_001.fastq.gz", "") for f in list_of_samples if f.endswith("_L001_R1_001.fastq.gz")]
-    list_of_samples = [f.replace("_L001_R2_001.fastq.gz", "") for f in list_of_samples if f.endswith("_L001_R2_001.fastq.gz")]
-    list_of_samples = list(set(list_of_samples))
+    R1 = [f.replace("_L001_R1_001.fastq.gz", "") for f in list_of_samples if f.endswith("_L001_R1_001.fastq.gz")]
+    R2 = [f.replace("_L001_R2_001.fastq.gz", "") for f in list_of_samples if f.endswith("_L001_R2_001.fastq.gz")]
+    list_of_samples = list(set(R1+R2))
 
-
-# Read leas of samples; it is a text file with one sample name per line
-with open(list_of_samples, 'r') as f:
-    list_of_samples = f.read().splitlines()
+else:
+    # Read list of samples; it is a text file with one sample name per line
+    with open(list_of_samples, 'r') as f:
+        list_of_samples = f.read().splitlines()
 
 # Make the list of files by adding the R1 and R2 to the sample name
 R1_files = [f"{sample}_L001_R1_001.fastq.gz" for sample in list_of_samples]
 R2_files = [f"{sample}_L001_R2_001.fastq.gz" for sample in list_of_samples]
 list_of_files = R1_files + R2_files
+
+if not os.path.exists("raw_data"):
+    os.system("mkdir raw_data")
 
 # Copy the contents of raw_data_path to the raw_data folder in the working directory
 # Skipping the ones that already exist
@@ -62,33 +66,22 @@ if "pangenome" in os.listdir():
                 if len(os.listdir(f"pangenome/{species}")) < 2:
                     os.system(f"rm -rf pangenome/{species}")
 
-
-# Initialize variables
 file_dict = {}
 file_set = set()
 
-# Get a list of files in the raw data path
 files = os.listdir("raw_data")
-
-# Filter files to include only fastq.gz files
 files = [f for f in files if f.endswith('.fastq.gz')]
 
-# Exclude files that contain the word "(x)" where x is a number
+# Exclude files that are copies of other files
 files = [f for f in files if not any([f"({i})" in f for i in range(10)])]
 
 # Process each file
 for f in tqdm(files, desc="Processing files"):
 
-    # Extract the entry name from the file name
     entry_name = f.replace('_R1', '').replace('_R2', '').replace('.fastq.gz', '')
-
-    # Add the file to the dictionary for the corresponding entry name
     file_dict.setdefault(entry_name, []).append(f)
-
-    # Add the entry name to the set of unique entry names
     file_set.add(entry_name)
 
-# Check if there are files that are not paired
 for entry in file_set:
     if len(file_dict[entry]) != 2:
         raise ValueError(f"Entry {entry} does not have a pair of files")
@@ -131,19 +124,19 @@ rule all:
             sample=sample_names
         ),
         pangenome_flag="flags/.pangenome",
-        Box_Contig_Length="report/vis_Box_Contig_Length.html",
-        DF_Full_Table="report/vis_DF_Full_Table.html",
-        DF_Reads_Table="report/vis_DF_Reads_Table.html",
-        Heatmap_Pangenomic="report/vis_Heatmap_Pangenomic.html",
-        Heatmap_Plasmids_Full_Figure_Coverage="report/vis_Heatmap_Plasmids_Full_Figure_Coverage.html",
-        Heatmap_Resistance_Full_Figure="report/vis_Heatmap_Resistance_Full_Figure.html",
-        Heatmap_Virulence_Full_Figure_Coverage="report/vis_Heatmap_Virulence_Full_Figure_Coverage.html",
-        Network_Samples_Figure="report/vis_Network_Samples_Figure.html",
-        Pangenome_Pie_Chart="report/vis_Pangenome_Pie_Chart.html",
-        Scatter_Contig_Length="report/vis_Scatter_Contig_Length.html",
-        Subtype_HTML_String="report/vis_Subtype_HTML_String.html",
-        Sunburst_Figure="report/vis_Sunburst_Figure.html",
-        report_flag="flags/.report"
+        Box_Contig_Length="report/QC_Box_Plot.html",
+        DF_Full_Table="report/Gene_Table.html",
+        DF_Reads_Table="report/QC_Table.html",
+        Heatmap_Pangenomic="report/Pangenomic_Heatmap.html",
+        Heatmap_Plasmids_Full_Figure_Coverage="report/Plasmid_Gene_Heatmap.html",
+        Heatmap_Resistance_Full_Figure="report/Resistance_Heatmap.html",
+        Heatmap_Virulence_Full_Figure_Coverage="report/Virulence_Heatmap.html",
+        Network_Samples_Figure="report/Network_Chart.html",
+        Pangenome_Pie_Chart="report/Pangenome_Pie_Chart.html",
+        Scatter_Contig_Length="report/QC_Scatter_Plot.html",
+        Subtype_HTML_String="report/Subtype_Pie_Charts.html",
+        Sunburst_Figure="report/Sunburst_Chart.html",
+        flag="flags/.report"
 
 rule fastqc:
     input:
@@ -250,13 +243,10 @@ def get_species_list_for_roary_unique():
     df = df.groupby(["SPECIES", "SAMPLE"]).size().reset_index()
     df = df[['SPECIES', 'SAMPLE']]
 
-    # Group by species and count the number of samples
     df_grouped = df.groupby("SPECIES").count().reset_index()
 
-    # Get the species that have more than one sample
     eligeble_species = df_grouped.loc[df_grouped["SAMPLE"] > 1, "SPECIES"].tolist()
 
-    # Return only the species that have more than one sample
     return list(set(df.loc[df["SPECIES"].isin(eligeble_species), "SPECIES"].tolist()))
 
 rule pangenome:
@@ -305,18 +295,18 @@ rule build_report:
     input:
         pangenome="flags/.pangenome",
     output:
-        Box_Contig_Length="report/vis_Box_Contig_Length.html",
-        DF_Full_Table="report/vis_DF_Full_Table.html",
-        DF_Reads_Table="report/vis_DF_Reads_Table.html",
-        Heatmap_Pangenomic="report/vis_Heatmap_Pangenomic.html",
-        Heatmap_Plasmids_Full_Figure_Coverage="report/vis_Heatmap_Plasmids_Full_Figure_Coverage.html",
-        Heatmap_Resistance_Full_Figure="report/vis_Heatmap_Resistance_Full_Figure.html",
-        Heatmap_Virulence_Full_Figure_Coverage="report/vis_Heatmap_Virulence_Full_Figure_Coverage.html",
-        Network_Samples_Figure="report/vis_Network_Samples_Figure.html",
-        Pangenome_Pie_Chart="report/vis_Pangenome_Pie_Chart.html",
-        Scatter_Contig_Length="report/vis_Scatter_Contig_Length.html",
-        Subtype_HTML_String="report/vis_Subtype_HTML_String.html",
-        Sunburst_Figure="report/vis_Sunburst_Figure.html",
+        Box_Contig_Length="report/QC_Box_Plot.html",
+        DF_Full_Table="report/Gene_Table.html",
+        DF_Reads_Table="report/QC_Table.html",
+        Heatmap_Pangenomic="report/Pangenomic_Heatmap.html",
+        Heatmap_Plasmids_Full_Figure_Coverage="report/Plasmid_Gene_Heatmap.html",
+        Heatmap_Resistance_Full_Figure="report/Resistance_Heatmap.html",
+        Heatmap_Virulence_Full_Figure_Coverage="report/Virulence_Heatmap.html",
+        Network_Samples_Figure="report/Network_Chart.html",
+        Pangenome_Pie_Chart="report/Pangenome_Pie_Chart.html",
+        Scatter_Contig_Length="report/QC_Scatter_Plot.html",
+        Subtype_HTML_String="report/Subtype_Pie_Charts.html",
+        Sunburst_Figure="report/Sunburst_Chart.html",
         flag="flags/.report"
     shell:
         "python scripts/build_report.py"
