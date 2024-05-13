@@ -4,12 +4,8 @@ from tqdm import tqdm
 from scripts.utils import species_dict
 from scripts.utils import forbidden_files
 
-raw_data_path = config["raw_data"]
-# list_of_samples = config["sample_list"]
-try:
-    list_of_samples = config["sample_list"]
-except KeyError:
-    list_of_samples = None
+raw_data_path = config.get("raw_data", None)
+list_of_samples = config.get("list_of_samples", None)
 
 if not list_of_samples:
 
@@ -34,7 +30,7 @@ if not os.path.exists("raw_data"):
 # Copy the contents of raw_data_path to the raw_data folder in the working directory
 # Skipping the ones that already exist
 # Only copy the files that are in the list_of_files
-for file in list_of_files:
+for file in tqdm(list_of_files):
     if file not in os.listdir("raw_data"):
         os.system(f"cp {raw_data_path}/{file} raw_data")
 
@@ -48,7 +44,7 @@ if "results" in os.listdir():
     for folder in os.listdir("results"):
         if folder not in list_of_samples:
             os.system(f"rm -rf results/{folder}")
-    
+
 if "pangenome" in os.listdir():
     # Delete files that are not in the list of samples from the pangenome folder 
     for species in os.listdir("pangenome"):
@@ -57,6 +53,9 @@ if "pangenome" in os.listdir():
             # If the file is not in the list of samples delete it
             if file.replace(".gff", "") not in list_of_samples:
                 os.system(f"rm pangenome/{species}/{file}")
+
+                if not os.path.exists(f"pangenome/{species}"):
+                    continue
 
                 # Should also delete the pangenomic analysis since it is not valid anymore
                 if "output" in os.listdir(f"pangenome/{species}"):
@@ -284,7 +283,6 @@ rule pangenome:
                     os.system(
                         f"cp results/{sample}/prokka/{sample}.gff pangenome/{species}/{sample}.gff"
                     )
-        
         # Run roary for each species
         for species in eligeble_species:
             os.system(f"roary pangenome/{species}/*.gff -f pangenome/{species}/output -e -n -p 16")

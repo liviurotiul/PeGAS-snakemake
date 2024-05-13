@@ -46,3 +46,4 @@ Before using PeGAS, ensure you have the following prerequisites installed:
 	```bash
 	(base)user@user:~/Desired/location$ snakemake --cores 32 --rerun-incomplete --use-conda --config raw_data=Path/To/Your/Data
 	```
+	**Set the *--cores* parameter according to your machine capabilities.**
