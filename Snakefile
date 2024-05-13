@@ -285,7 +285,7 @@ rule pangenome:
                     )
         # Run roary for each species
         for species in eligeble_species:
-            os.system(f"roary pangenome/{species}/*.gff -f pangenome/{species}/output -e -n -p 16")
+            os.system(f"roary pangenome/{species}/*.gff -f pangenome/{species}/output -e -n -p 4")
 
         os.system("touch flags/.pangenome")
 

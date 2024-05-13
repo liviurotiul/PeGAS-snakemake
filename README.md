@@ -1,4 +1,5 @@
 
+
 # PeGAS: A Comprehensive Bioinformatic Solution for Pathogenic Bacterial Genomic Analysis
 
 This is PeGAS, a powerful bioinformatic tool designed for the seamless quality control, assembly, and annotation of Illumina paired-end reads specific to pathogenic bacteria. This tool integrates state-of-the-art open-source software to provide a streamlined and efficient workflow, ensuring accurate insights into the genomic makeup of pathogenic microbial strains.
@@ -33,6 +34,10 @@ Before using PeGAS, ensure you have the following prerequisites installed:
 	```bash
 	(base)user@user:~/Desired/location$ git clone https://github.com/liviurotiul/PeGAS-snakemake.git
 	```
+- **Roary:** Install roary:
+	```bash
+	(base)user@user:sudo apt-get install roary
+	```
 - **Environment:** Create the conda environemnt you will use for the execution and activate it:
 	```bash
 	(base)user@user:~/Desired/location$ conda env create -f environment.yaml
@@ -41,9 +46,16 @@ Before using PeGAS, ensure you have the following prerequisites installed:
 	(base)user@user:~/Desired/location$ conda activate PeGAS-snakemake
 	```
 ### 2.  Using PeGAS:
-- Copy all your fastq.gz files into one folder
+- First set up a folder in a different path to the one where PeGAS was installed
+- Copy all your fastq.gz files in the folder with their original names
 - Run this command in the terminal:
 	```bash
 	(base)user@user:~/Desired/location$ snakemake --cores 32 --rerun-incomplete --use-conda --config raw_data=Path/To/Your/Data
 	```
+- Alternatively you can provide a text file with the name of the samples (one sample per line) by modifying the command as such:
+	```bash
+	(base)user@user:~/Desired/location$ snakemake --cores 32 --rerun-incomplete --use-conda --config raw_data=Path/To/Your/Data list_of_samples=Path/To/The/File
+	```
 	**Set the *--cores* parameter according to your machine capabilities.**
+### 3.  Visualising the results:
+- After the files have been processed and the analysis is completed, you can visualise the results in the path, in the report folder and all the resulting files in the results folder
