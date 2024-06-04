@@ -1,11 +1,31 @@
 import itertools
 import pandas as pd
+import time
 from tqdm import tqdm
-from scripts.utils import species_dict
-from scripts.utils import forbidden_files
+from utils import species_dict
+from utils import forbidden_files
+from build_dataframe import build_dataframe
+from build_report import build_report
 
 raw_data_path = config.get("raw_data", None)
-list_of_samples = config.get("list_of_samples", None)
+list_of_samples = config.get("samples", None)
+outdir = config.get("outdir", None)
+overwrite = config.get("overwrite", True)
+
+with open(f"layout.html", 'r') as file:
+    html_string = file.read()
+
+if not outdir:
+    raise ValueError("Output directory not specified")
+
+if os.path.exists(outdir) and not overwrite:
+    # Add the execution time to the output directory
+    outdir = outdir + "_" + str(time.time())
+
+if not os.path.exists(outdir):
+    os.system(f"mkdir {outdir}")
+
+workdir: outdir
 
 if not list_of_samples:
 
@@ -24,51 +44,51 @@ R1_files = [f"{sample}_L001_R1_001.fastq.gz" for sample in list_of_samples]
 R2_files = [f"{sample}_L001_R2_001.fastq.gz" for sample in list_of_samples]
 list_of_files = R1_files + R2_files
 
-if not os.path.exists("raw_data"):
-    os.system("mkdir raw_data")
+if not os.path.exists(f"{outdir}/raw_data"):
+    os.system(f"mkdir {outdir}/raw_data")
 
 # Copy the contents of raw_data_path to the raw_data folder in the working directory
 # Skipping the ones that already exist
 # Only copy the files that are in the list_of_files
 for file in tqdm(list_of_files):
-    if file not in os.listdir("raw_data"):
-        os.system(f"cp {raw_data_path}/{file} raw_data")
+    if file not in os.listdir(f"{outdir}/raw_data"):
+        os.system(f"cp {raw_data_path}/{file} {outdir}/raw_data")
 
 # Delete files that are not in the list of samples
-for file in os.listdir("raw_data"):
+for file in os.listdir(f"{outdir}/raw_data"):
     if file not in list_of_files:
-        os.system(f"rm -rf raw_data/{file}")
+        os.system(f"rm -rf {outdir}/raw_data/{file}")
 
 if "results" in os.listdir():
     # Delete files that are not in the list of samples from the results folder
-    for folder in os.listdir("results"):
+    for folder in os.listdir(f"{outdir}/results"):
         if folder not in list_of_samples:
-            os.system(f"rm -rf results/{folder}")
+            os.system(f"rm -rf {outdir}/results/{folder}")
 
 if "pangenome" in os.listdir():
     # Delete files that are not in the list of samples from the pangenome folder 
-    for species in os.listdir("pangenome"):
+    for species in os.listdir(f"{outdir}/pangenome"):
         for file in os.listdir(f"pangenome/{species}"):
 
             # If the file is not in the list of samples delete it
             if file.replace(".gff", "") not in list_of_samples:
-                os.system(f"rm pangenome/{species}/{file}")
+                os.system(f"rm {outdir}/pangenome/{species}/{file}")
 
-                if not os.path.exists(f"pangenome/{species}"):
+                if not os.path.exists(f"{outdir}/pangenome/{species}"):
                     continue
 
                 # Should also delete the pangenomic analysis since it is not valid anymore
-                if "output" in os.listdir(f"pangenome/{species}"):
-                    os.system(f"rm -rf pangenome/{species}/output")
+                if "output" in os.listdir(f"{outdir}/pangenome/{species}"):
+                    os.system(f"rm -rf {outdir}/pangenome/{species}/output")
 
                 # If the species folder is left with only one file delete it
-                if len(os.listdir(f"pangenome/{species}")) < 2:
-                    os.system(f"rm -rf pangenome/{species}")
+                if len(os.listdir(f"{outdir}/pangenome/{species}")) < 2:
+                    os.system(f"rm -rf {outdir}/pangenome/{species}")
 
 file_dict = {}
 file_set = set()
 
-files = os.listdir("raw_data")
+files = os.listdir(f"{outdir}/raw_data")
 files = [f for f in files if f.endswith('.fastq.gz')]
 
 # Exclude files that are copies of other files
@@ -88,6 +108,8 @@ for entry in file_set:
 fastq_file_names = [sorted([R1, R2]) for R1, R2 in file_dict.values()]
 
 sample_names = [file[0].replace("_L001_R1_001.fastq.gz", "") for file in fastq_file_names]
+
+
 
 rule all:
     input:
@@ -213,8 +235,8 @@ checkpoint build_dataframe:
         shovill=expand("results/{sample}/shovill/contigs.fa", sample=sample_names)
     output:
         dataframe="dataframe/results.csv"
-    shell:
-        "python scripts/build_dataframe.py"
+    run:
+        build_dataframe()
 
 # Helper function to get the species based on the sample
 def get_species_list_for_roary():
@@ -306,5 +328,5 @@ rule build_report:
         Subtype_HTML_String="report/Subtype_Pie_Charts.html",
         Sunburst_Figure="report/Sunburst_Chart.html",
         flag="flags/.report"
-    shell:
-        "python scripts/build_report.py"
+    run:
+        build_report(html_string)
