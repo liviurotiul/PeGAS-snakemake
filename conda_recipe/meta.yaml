@@ -1,0 +1,23 @@
+package:
+  name: pegas
+  version: "0.1.0"
+
+source:
+  path: ..
+
+build:
+  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - snakemake
+    - pandas
+    - plotly
+
+extra:
+  recipe-maintainers:
+    - yourusername
